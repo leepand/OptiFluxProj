@@ -1,0 +1,75 @@
+<div class="fixed inset-0 bg-black bg-opacity-50 hidden" id="editProjectModal">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">编辑项目</h3>
+            <form id="editProjectForm" onsubmit="return handleEditProjectSubmit(event)">
+                <input type="hidden" id="edit_project_id" name="id">
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">项目名称</label>
+                    <input type="text" id="edit_project_name" name="name" required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">项目描述</label>
+                    <textarea id="edit_project_description" name="description" rows="3"
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeEditProjectModal()"
+                            class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                        取消
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                        保存
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentEditingProject = null;
+
+function openEditProjectModal(projectId) {
+    fetch(`/api/project/${projectId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('edit_project_id').value = data.id;
+            document.getElementById('edit_project_name').value = data.name;
+            document.getElementById('edit_project_description').value = data.description;
+            document.getElementById('editProjectModal').classList.remove('hidden');
+            currentEditingProject = projectId;
+        });
+}
+
+function closeEditProjectModal() {
+    document.getElementById('editProjectModal').classList.add('hidden');
+    currentEditingProject = null;
+}
+
+function handleEditProjectSubmit(e) {
+    e.preventDefault();
+    const formData = {
+        id: document.getElementById('edit_project_id').value, // 确保ID被正确获取
+        name: e.target.name.value,
+        description: e.target.description.value
+    };
+
+    fetch(`/api/project/${formData.id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(formData)
+    }).then(response => {
+        if (response.ok) {
+            window.location.reload();
+        }
+    });
+    return false;
+}
+
+</script>

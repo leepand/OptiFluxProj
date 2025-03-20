@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">机器学习项目管理</h1>
+        <button onclick="openCreateProjectModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+            新建项目
+        </button>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for project in projects %}
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h2 class="text-xl font-semibold mb-2">{{ project.name }}</h2>
+                    <p class="text-gray-600 mb-4 text-sm">{{ project.description }}</p>
+                    <div class="text-xs text-gray-500">
+                        <span>版本: v{{ project.version }}</span>
+                        <span class="ml-3">创建于: {{ project.created_at.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                </div>
+                <div class="ml-4 flex flex-col space-y-2">
+                    <button onclick="openEditProjectModal({{ project.id }})" 
+                            class="text-sm px-3 py-1 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200">
+                        编辑
+                    </button>
+                    <button onclick="deleteProject({{ project.id }})" 
+                            class="text-sm px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200">
+                        删除
+                    </button>
+                </div>
+            </div>
+            <div class="mt-4 pt-2 border-t border-gray-100">
+                <a href="{{ url_for('project_detail', project_id=project.id) }}" 
+                   class="text-blue-500 text-sm hover:underline flex items-center">
+                    查看特征管理 →
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% include "modals/create_project.html" %}
+{% include "modals/edit_project.html" %}
+
+<script>
+
+
+    
+// 项目编辑功能
+function openEditProjectModal(projectId) {
+    fetch(`/api/project/${projectId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('edit_project_id').value = data.id;
+            document.getElementById('edit_project_name').value = data.name;
+            document.getElementById('edit_project_description').value = data.description;
+            document.getElementById('editProjectModal').classList.remove('hidden');
+        });
+}
+
+// 项目删除功能
+async function deleteProject(projectId) {
+    if (confirm('确定要删除这个项目及其所有特征吗？')) {
+        try {
+            const response = await fetch(`/api/project/${projectId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+        }
+    }
+}
+
+
+// 其他原有功能保持不变...
+</script>
+{% endblock %}

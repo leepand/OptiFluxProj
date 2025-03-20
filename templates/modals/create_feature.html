@@ -1,0 +1,110 @@
+<!-- templates/modals/create_feature.html -->
+<div class="fixed inset-0 bg-black bg-opacity-50 hidden" id="createFeatureModal">
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="bg-white rounded-lg p-8 w-full max-w-md">
+      <h3 class="text-xl font-bold mb-4">创建新特征</h3>
+      <form id="featureForm" onsubmit="return handleFeatureSubmit(event)">
+        <input type="hidden" name="project_id" value="{{ project.id }}">
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">特征名称</label>
+          <input type="text" name="name" required
+                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        <div class="mb-4">
+    <label class="block text-sm font-medium text-gray-700">中文名称</label>
+    <input type="text" name="chinese_name" required
+           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+</div>
+
+<div class="mb-4">
+    <label class="block text-sm font-medium text-gray-700">描述</label>
+    <textarea name="description" rows="2"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+</div>
+          
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">数据类型</label>
+          <select name="data_type" required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <option value="numeric">数值型</option>
+            <option value="categorical">分类型</option>
+            <option value="text">文本型</option>
+            <option value="datetime">时间型</option>
+          </select>
+        </div>
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">参数 (JSON格式)</label>
+          <textarea name="parameters" rows="3"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder='{"示例参数": "值"}'></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-4">
+          <button type="button" onclick="closeCreateFeatureModal()"
+                  class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+            取消
+          </button>
+          <button type="submit"
+                  class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+            创建
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+    document.querySelectorAll('input[name="name"], select[name="data_type"]').forEach(el => {
+    el.addEventListener('input', generateParameterExample);
+});
+
+function generateParameterExample() {
+    const name = document.querySelector('input[name="name"]').value;
+    const dataType = document.querySelector('select[name="data_type"]').value;
+    
+    let example = {};
+    if (name && dataType) {
+        example = {
+            "source": `${name}_raw`,
+            "type": dataType,
+            "transforms": [`normalize_${name}`]
+        }
+    }
+    
+    document.querySelector('textarea[name="parameters"]').value = 
+        JSON.stringify(example, null, 2);
+}
+
+    
+function handleFeatureSubmit(e) {
+  e.preventDefault();
+  const formData = {
+    project_id: {{ project.id }},
+    name: e.target.name.value,
+    chinese_name: e.target.chinese_name.value,
+    description: e.target.description.value,
+    data_type: e.target.data_type.value,
+    parameters: JSON.parse(e.target.parameters.value || '{}')
+  };
+
+  fetch('/api/feature', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(formData)
+  }).then(response => {
+    if (response.ok) window.location.reload();
+  });
+  return false;
+}
+
+// 控制特征模态框
+function closeCreateFeatureModal() {
+  document.getElementById('createFeatureModal').classList.add('hidden');
+}
+function openCreateFeatureModal() {
+  document.getElementById('createFeatureModal').classList.remove('hidden');
+}
+</script>
