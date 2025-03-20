@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- 模型服务详情页面 -->
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-4 flex justify-between items-center">
+        <a href="{{ url_for('project_detail', project_id=model_service.project_id) }}" class="text-blue-500 hover:underline">&lt; 返回项目详情</a>
+    </div>
+
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{{ model_service.name }}</h1>
+            <p class="text-gray-600 mt-2">{{ model_service.description }}</p>
+        </div>
+        <div class="space-x-4">
+            <button onclick="openCreateFeatureModal()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                新建特征
+            </button>
+            <button onclick="exportSelectedFeatures()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                导出选中
+            </button>
+        </div>
+    </div>
+
+    <!-- 特征表格 -->
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                       <input type="checkbox" id="selectAll" class="feature-checkbox">
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">英文名</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">中文名</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">特征描述</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">数据类型</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">版本</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">参数配置</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for feature in features %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <input type="checkbox" class="feature-checkbox row-checkbox" value="{{ feature.id }}">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap font-mono">{{ feature.name }}</td>
+                    <td class="px-6 py-4">{{ feature.chinese_name }}</td>
+                    <td class="px-6 py-4">{{ feature.description }}</td>
+                    <td class="px-6 py-4">{{ feature.data_type }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                            {% if feature.status == 'confirmed' %}bg-green-100 text-green-800
+                            {% elif feature.status == 'deprecated' %}bg-red-100 text-red-800
+                            {% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ feature.status|title }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm">
+                            <div>v{{ feature.version }}</div>
+                            <div class="text-gray-500 text-xs mt-1">
+                                更新于 {{ feature.updated_at.strftime('%m-%d %H:%M') }}
+                            </div>
+                        </div>
+                    </td>
+                     <td class="px-6 py-4">{{ feature.created_at.strftime('%m-%d %H:%M') }}</td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm space-y-1">
+                            <div class="text-gray-500">{{ feature.description }}</div>
+                            <pre class="text-xs bg-gray-50 p-2 rounded">{{ feature.parameters|tojson(indent=2) }}</pre>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 space-y-2">
+                        <div class="flex flex-col space-y-2">
+                            <button onclick="updateFeatureStatus({{ feature.id }}, 'confirmed')"
+                                    class="text-sm px-3 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200">
+                                确认
+                            </button>
+                            <button onclick="updateFeatureStatus({{ feature.id }}, 'deprecated')"
+                                    class="text-sm px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200">
+                                废弃
+                            </button>
+                            <button onclick="showFeatureHistory({{ feature.id }})"
+                                    class="text-sm px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200">
+                                历史
+                            </button>
+                            <button onclick="openEditFeatureModal({{ feature.id }})"
+                                    class="text-sm px-3 py-1 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200">
+                                编辑
+                            </button>
+                            <button onclick="deleteFeature({{ feature.id }})"
+                                    class="text-sm px-3 py-1 bg-gray-100 text-gray-800 rounded hover:bg-gray-200">
+                                删除
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 包含模态框模板 -->
+{% include "modals/create_feature.html" %}
+{% include "modals/feature_history.html" %}
+{% include "modals/edit_feature.html" %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 确保DOM加载完成后执行
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+
+    // 全选控制
+    if (selectAll) {
+        selectAll.addEventListener('change', function(e) {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+    }
+
+    // 添加三级状态支持（全选/部分选/未选）
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            if (selectAll) {
+                selectAll.checked = checkedCount === checkboxes.length;
+                selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+            }
+        });
+    });
+});
+
+// 特征状态操作
+async function updateFeatureStatus(featureId, status) {
+    try {
+        const response = await fetch(`/api/feature/${featureId}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status })
+        });
+        if (response.ok) {
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('操作失败:', error);
+    }
+}
+
+// 删除特征
+async function deleteFeature(featureId) {
+    if (confirm('确定要删除这个特征吗？')) {
+        try {
+            const response = await fetch(`/api/feature2/${featureId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+        }
+    }
+}
+
+// 项目操作
+async function deleteProject(projectId) {
+    if (confirm('确定要删除整个项目吗？')) {
+        try {
+            const response = await fetch(`/api/project/${projectId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                window.location.href = '/';
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+        }
+    }
+}
+
+// 其他函数保持原有逻辑...
+async function showFeatureHistory(featureId) {
+    try {
+        const response = await fetch(`/api/feature/${featureId}/history`);
+        const historyData = await response.json();
+
+        const modal = document.getElementById('featureHistoryModal');
+        const content = document.getElementById('historyContent');
+
+        content.innerHTML = `
+            <div class="mb-4 font-semibold text-gray-900">${historyData.current.name} 版本历史</div>
+            <div class="space-y-6">
+                ${historyData.versions.map(version => `
+                    <div class="p-4 bg-white rounded-lg shadow-md border">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium text-gray-800">版本 v${version.version}</span>
+                            <span class="text-sm text-gray-500">${new Date(version.updated_at).toLocaleString()}</span>
+                        </div>
+                        <div class="mt-2 text-sm space-y-2">
+                            <div>状态: <span class="px-2 py-1 rounded text-sm ${getStatusColor(version.status)}">${version.status}</span></div>
+                            <div>中文名: <span class="text-gray-700">${version.chinese_name}</span></div>
+                            <div>描述: <span class="text-gray-700">${version.description}</span></div>
+                            <div class="bg-gray-100 p-3 rounded shadow-sm">
+                                <pre class="text-xs">${JSON.stringify(version.parameters, null, 2)}</pre>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+
+        function getStatusColor(status) {
+            return {
+                confirmed: 'bg-green-100 text-green-800',
+                deprecated: 'bg-red-100 text-red-800',
+                candidate: 'bg-blue-100 text-blue-800'
+            }[status];
+        }
+    } catch (error) {
+        console.error('加载历史失败:', error);
+        alert('无法加载特征历史');
+    }
+}
+
+function closeFeatureHistory() {
+    document.getElementById('featureHistoryModal').classList.add('hidden');
+}
+
+let currentEditingFeature = null;
+
+function openEditFeatureModal(featureId) {
+    fetch(`/api/feature/${featureId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('edit_feature_id').value = data.id;
+            document.getElementById('edit_feature_name').value = data.name;
+            document.getElementById('edit_feature_chinese_name').value = data.chinese_name;
+            document.getElementById('edit_feature_description').value = data.description;
+            document.getElementById('edit_feature_data_type').value = data.data_type;
+            document.getElementById('edit_feature_parameters').value = JSON.stringify(data.parameters, null, 2);
+            document.getElementById('editFeatureModal').classList.remove('hidden');
+            currentEditingFeature = featureId;
+        });
+}
+
+function closeEditFeatureModal() {
+    document.getElementById('editFeatureModal').classList.add('hidden');
+    currentEditingFeature = null;
+}
+
+function handleEditFeatureSubmit(e) {
+    e.preventDefault();
+    const formData = {
+        id: currentEditingFeature,
+        name: e.target.name.value,
+        chinese_name: e.target.chinese_name.value,
+        description: e.target.description.value,
+        data_type: e.target.data_type.value,
+        parameters: JSON.parse(e.target.parameters.value || '{}')
+    };
+
+    fetch(`/api/feature/${currentEditingFeature}`, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(formData)
+    }).then(response => {
+        if (response.ok) {
+            window.location.reload();
+        }
+    });
+    return false;
+}
+</script>
+{% endblock %}

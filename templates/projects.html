@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
+<!-- 项目列表页面 -->
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-800">机器学习项目管理</h1>
-        <button onclick="openCreateProjectModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
-            新建项目
-        </button>
+        <div class="space-x-4">
+            <button onclick="openCreateProjectModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                新建项目
+            </button>
+        </div>
     </div>
-    
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for project in projects %}
         <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
@@ -21,20 +24,17 @@
                     </div>
                 </div>
                 <div class="ml-4 flex flex-col space-y-2">
-                    <button onclick="openEditProjectModal({{ project.id }})" 
-                            class="text-sm px-3 py-1 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200">
+                    <button onclick="openEditProjectModal({{ project.id }})" class="text-sm px-3 py-1 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200">
                         编辑
                     </button>
-                    <button onclick="deleteProject({{ project.id }})" 
-                            class="text-sm px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200">
+                    <button onclick="deleteProject({{ project.id }})" class="text-sm px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200">
                         删除
                     </button>
                 </div>
             </div>
             <div class="mt-4 pt-2 border-t border-gray-100">
-                <a href="{{ url_for('project_detail', project_id=project.id) }}" 
-                   class="text-blue-500 text-sm hover:underline flex items-center">
-                    查看特征管理 →
+                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="text-blue-500 text-sm hover:underline flex items-center">
+                    查看模型服务 →
                 </a>
             </div>
         </div>
@@ -42,11 +42,37 @@
     </div>
 </div>
 
+
 {% include "modals/create_project.html" %}
 {% include "modals/edit_project.html" %}
 
 <script>
 
+function openCreateModelServiceModal() {
+    document.getElementById('createModelServiceModal').classList.remove('hidden');
+}
+
+function closeCreateModelServiceModal() {
+    document.getElementById('createModelServiceModal').classList.add('hidden');
+}
+
+function handleModelServiceSubmit(e) {
+    e.preventDefault();
+    const formData = {
+        project_id: document.querySelector('input[name="project_id"]').value,
+        name: e.target.name.value,
+        description: e.target.description.value
+    };
+
+    fetch('/api/model_service', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(formData)
+    }).then(response => {
+        if (response.ok) window.location.reload();
+    });
+    return false;
+}
 
     
 // 项目编辑功能

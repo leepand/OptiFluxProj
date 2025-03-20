@@ -1,0 +1,27 @@
+<!-- modals/create_model_service.html -->
+<div class="fixed inset-0 bg-black bg-opacity-50 hidden" id="createModelServiceModal">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">创建新模型服务</h3>
+            <form id="modelServiceForm" onsubmit="return handleModelServiceSubmit(event)">
+                <input type="hidden" name="project_id" value="{{ project.id }}">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">模型服务名称</label>
+                    <input type="text" name="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">描述</label>
+                    <textarea name="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeCreateModelServiceModal()" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                        取消
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                        创建
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
